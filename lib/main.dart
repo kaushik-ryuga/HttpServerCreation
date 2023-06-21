@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 
 void main() async{
@@ -33,6 +34,7 @@ class _HomeState extends State<Home> {
   }
 
   Future<void> handleRequest(HttpRequest request) async {
+     File file;
     if(request.method == 'GET' && request.uri.path == '/api/hello') {
       final response = request.response;
       response.headers.contentType = ContentType.json;
@@ -41,16 +43,22 @@ class _HomeState extends State<Home> {
     }
     else if (request.uri.path == '/api/download') {
       print('finding the file');
-      final file = File('assets/downloadable.txt');
-
-      if(file.existsSync()) {
-        request.response.headers.contentType = ContentType.binary;
-        final fileStream = file.openRead();
-        await fileStream.pipe(request.response);
-      } else {
-        request.response.statusCode = HttpStatus.notFound;
-        request.response.writeln('File not found');
+      try{
+        file = File('/storage/self/primary/Pictures/1684905373835.jpg');
+        if(await file.exists()) {
+          request.response.headers.contentType = ContentType.binary;
+          final fileStream = file.openRead();
+          await fileStream.pipe(request.response);
+        } else {
+          print('File not found error');
+          request.response.statusCode = HttpStatus.notFound;
+          request.response.writeln('File not found');
+        }
+      }catch(e){
+        print("Entered catch $e");
       }
+
+
     }
     else {
       request.response.statusCode = HttpStatus.notFound;
@@ -70,17 +78,21 @@ class _HomeState extends State<Home> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             ElevatedButton(
+              child: const Text('Ask for permission'),
+              onPressed: () async{
+                var status = await Permission.storage.status;
+                if (!status.isGranted) {
+                  await Permission.storage.request();
+                }
+              },
+            ),ElevatedButton(
               child: const Text('Start Server'),
               onPressed: () async{
                 startServer();
-                // final response = await http.get(Uri.parse('${server!.address.toString()}:5050'));
-                setState(() {
-                  statusText = 'server is running..... and ip is ${server!.address.toString()}';
-                });
               },
             ),
 
-            Text(statusText),
+            // Text(statusText),
 
             ElevatedButton(
               child: const Text('Stop Server'),
@@ -91,8 +103,6 @@ class _HomeState extends State<Home> {
                 });
               },
             ),
-
-
           ],
         ),
       ),
