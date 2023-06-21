@@ -41,7 +41,7 @@ class _HomeState extends State<Home> {
     }
     else if (request.uri.path == '/api/download') {
       print('finding the file');
-      final file = File('resources/ryuga.jpg');
+      final file = File('assets/downloadable.txt');
 
       if(file.existsSync()) {
         request.response.headers.contentType = ContentType.binary;
